@@ -10,7 +10,7 @@ import javax.swing.text.Keymap;
 
 class SocData {
   private String nick;
-  private int status;
+  private int status; // 0 = init | 1 = outside | 2 = inside
   private String room;
 
   public SocData() {
@@ -178,10 +178,6 @@ public class ChatServer {
     }
   }
 
-  // TODO: Mudar o metodo de processinput para receber uma chave e só entao checar
-  // a connection
-  // devido a informaçao de estado
-
   // Just read the message from the socket and send it to stdout
   static private boolean processInput(SelectionKey k) throws IOException {
     // Read the message to the buffer
@@ -296,7 +292,6 @@ public class ChatServer {
   }
 
   static private void broadcast(int id, String room, String first, String second) throws IOException { // 0 - MESSAGE ;
-                                                                                                       // 1 - NEWNICK
     String msg = "";
     if (id == 0) {
       msg += "MESSAGE ";
