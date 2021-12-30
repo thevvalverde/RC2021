@@ -233,7 +233,7 @@ public class ChatServer {
         sd.setNick(splitMessage[1]);
         setOK(sc);
         if (sd.getStatus() == 2) { // Only broadcast if it's in a room
-          broadcast(1, sd.getRoom(), old, splitMessage[1]);
+          broadcast(1, sd.getRoom(), old, splitMessage[1], s);
           return true;
         }
         sd.setStatus(1);
@@ -299,7 +299,7 @@ public class ChatServer {
           setError(sc);
           return true;
         }
-        broadcast(0, sd.getRoom(), sd.getNick(), message);
+        broadcast(0, sd.getRoom(), sd.getNick(), message, s);
         break;
     }
 
@@ -328,24 +328,26 @@ public class ChatServer {
     }
   }
 
-  static private void broadcast(int id, String room, String first, String second) throws IOException { // 0 - MESSAGE ; 1 - NEWNICK
+  static private void broadcast(int id, String room, String first, String second, Socket s) throws IOException { // 0 - MESSAGE ; 1 - NEWNICK
     String msg = "";
     if (id == 0) {
-      msg += first + ": " + second;
+      msg += "MESSAGE ";
     } else {
       msg += "NEWNICK ";
-      msg += first + " ";
-      msg += second + " ";
     }
+    msg += first + " ";
+    msg += second + " ";
     for (Socket soc : roomMap.get(room)) {
-      SocketChannel sc = soc.getChannel();
-      writeMsg(sc, msg);
+      if(id != 1 || soc != s) {
+        SocketChannel sc = soc.getChannel();
+        writeMsg(sc, msg);
+        }
+      }
     }
-  }
 
-  static private void writeMsg(SocketChannel sc, String message) throws IOException {
-    // System.out.println("Sending message : " + message);
-    sc.write(encoder.encode(CharBuffer.wrap(message + '\n')));
-  }
+    static private void writeMsg(SocketChannel sc, String message) throws IOException {
+      // System.out.println("Sending message : " + message);
+      sc.write(encoder.encode(CharBuffer.wrap(message + '\n')));
+    }
 
-}
+  }
