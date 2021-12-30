@@ -22,6 +22,10 @@ public class ChatClient {
     String server;
     int port;
     Socket clientSocket;
+
+    String start = "";
+    MessageReader reader;
+
     
     // Método a usar para acrescentar uma string à caixa de texto
     // * NÃO MODIFICAR *
@@ -81,7 +85,7 @@ public class ChatClient {
         // PREENCHER AQUI com código que envia a mensagem ao servidor
 
         DataOutputStream toServer = new DataOutputStream(clientSocket.getOutputStream());
-        toServer.writeBytes(message + '\n'); // Write to server
+        toServer.writeBytes("/" + message + '\n'); // Write to server
 
     }
 
@@ -90,13 +94,8 @@ public class ChatClient {
     public void run() throws IOException {
         // PREENCHER AQUI
 
-        while(true) { // Read responses from server
-            BufferedReader fromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            String newSentence = fromServer.readLine();
-            if(newSentence==null) return;
-            printMessage(newSentence + '\n');
-        }
-
+        reader = new MessageReader(this);
+        reader.start();
 
     }
     
@@ -108,15 +107,71 @@ public class ChatClient {
         client.run();
     }
 
-    // class ReadMessage implements Runnable {
-    //     boolean open = true;
+    class MessageReader implements Runnable{
+        boolean open = true;
+        ChatClient client;
+        Thread thr;
+        String start = "";
 
-    //     public ReadMessage(){}
+        public MessageReader(ChatClient client){
+            this.client = client;
+        }
 
-    //     public void close() { open = false; }
+        public void start() {
+            thr = new Thread(this);
+            thr.start();
+        }
 
-    //     public void run() {
-    //     }
-    // }
+        public void close() { open = false; }
+
+        public void run(){
+            while(open) {
+                try {
+                    BufferedReader fromServer = new BufferedReader(new InputStreamReader(client.clientSocket.getInputStream()));
+                    String tmp = fromServer.readLine();
+                    if(tmp==null) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (Exception e) {
+                            System.err.println(e);
+                        }
+                        frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+                        return;
+                    }
+                    String[] rcvd = tmp.split(" ", 3);
+                    String ans = "";
+                    switch(rcvd[0]) {
+                        case "MESSAGE":
+                            ans += rcvd[1] + ": " + rcvd[2];
+                            break;
+                        case "NEWNICK":
+                            ans += rcvd[1] + " mudou de nome para " + rcvd[2];
+                            break;
+                        case "OK":
+                            ans += "OK";
+                            break;
+                        case "ERROR":
+                            ans += "ERROR";
+                            break;
+                        case "JOINED":
+                            ans += rcvd[1] + " entrou na sala";
+                            break;
+                        case "LEFT":
+                            ans += rcvd[1] + " saiu da sala";
+                            break;
+                        case "PRIVATE":
+                            ans += "(priv) " + rcvd[1] + ": " + rcvd[2];
+                            break;
+                        case "BYE":
+                            ans += "BYE";
+                    }
+                    client.printMessage(ans + "\n");
+                } catch(IOException err) {
+                    System.out.println(err.toString());
+                    close();
+                }
+            }
+        }
+    }
 
 }
