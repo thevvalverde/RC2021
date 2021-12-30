@@ -204,7 +204,6 @@ public class ChatServer {
     buffer.clear();
     sc.read(buffer);
     buffer.flip();
-    System.out.println(buffer.limit());
 
 
     // If no data, close the connection
@@ -260,11 +259,12 @@ public class ChatServer {
           break;
         case ("/leave"):
           if (sd.getStatus() == 2) {
-            roomMap.get(sd.getRoom()).remove(s);
+            String room = sd.getRoom();
+            roomMap.get(room).remove(s);
             sd.setStatus(1);
             sd.setRoom("");
+            broadcast(1, room, sd.getNick());
             setOK(sc);
-            broadcast(1, sd.getRoom(), sd.getNick());
           } else {
             setError(sc);
           }
