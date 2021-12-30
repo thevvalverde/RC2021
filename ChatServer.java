@@ -202,8 +202,10 @@ public class ChatServer {
     StringBuffer sb = sd.sb;
 
     buffer.clear();
-    sc.read(buffer);
+    System.out.println( sc.read(buffer));
     buffer.flip();
+    System.out.println(buffer.limit());
+
 
     // If no data, close the connection
     if (buffer.limit() == 0) {
@@ -212,92 +214,92 @@ public class ChatServer {
 
     String msg = decoder.decode(buffer).toString();
     sb.append(msg);
-    int index = sb.indexOf("\n");
-    if(index==-1) return true;
-    String message = sb.substring(0, index);
-    sb.delete(0, index + 1);
-    if(message.charAt(0)=='/' && message.charAt(1)=='/') message = message.substring(1);
+    int index = 0;
+    while((index = sb.indexOf("\n"))!=-1) {
+      String message = sb.substring(0, index);
+      sb.delete(0, index + 1);
+      if(message.charAt(0)=='/' && message.charAt(1)=='/') message = message.substring(1);
 
-    String[] splitMessage = message.split(" ", -1);
-    if(message.length()==0 || splitMessage.length==0) return true;
+      String[] splitMessage = message.split(" ", -1);
+      if(message.length()==0 || splitMessage.length==0) return true;
 
-    switch (splitMessage[0]) {
-      case ("/nick"):
-        for (SocData it : socMap.values()) { // If nick is used, return
-          if (it.getNick().equals(splitMessage[1])) {
+      switch (splitMessage[0]) {
+        case ("/nick"):
+          for (SocData it : socMap.values()) { // If nick is used, return
+            if (it.getNick().equals(splitMessage[1])) {
+              setError(sc);
+              return true;
+            }
+          }
+          String old = sd.getNick();
+          sd.setNick(splitMessage[1]);
+          setOK(sc);
+          if (sd.getStatus() == 2) { // Only broadcast if it's in a room
+            broadcast(1, sd.getRoom(), old, splitMessage[1], s);
+            return true;
+          }
+          sd.setStatus(1);
+          break;
+        case ("/join"):
+          if (sd.getStatus() == 0) {
             setError(sc);
             return true;
           }
-        }
-        String old = sd.getNick();
-        sd.setNick(splitMessage[1]);
-        setOK(sc);
-        if (sd.getStatus() == 2) { // Only broadcast if it's in a room
-          broadcast(1, sd.getRoom(), old, splitMessage[1], s);
-          return true;
-        }
-        sd.setStatus(1);
-        break;
-      case ("/join"):
-        if (sd.getStatus() == 0) {
-          setError(sc);
-          return true;
-        }
-        String roomName = splitMessage[1];
-        if (!roomMap.containsKey(roomName))
-          roomMap.put(roomName, new HashSet<Socket>());
-        broadcast(0, roomName, sd.getNick());
-        roomMap.get(roomName).add(s);
-        if (sd.getStatus() == 2) { // If was in another room
-          roomMap.get(sd.getRoom()).remove(s);
-          broadcast(1, sd.getRoom(), sd.getNick());
-        } else
-          sd.setStatus(2);
-        sd.setRoom(roomName);
-        setOK(sc);
-        break;
-      case ("/leave"):
-        if (sd.getStatus() == 2) {
-          roomMap.get(sd.getRoom()).remove(s);
-          sd.setStatus(1);
-          sd.setRoom("");
+          String roomName = splitMessage[1];
+          if (!roomMap.containsKey(roomName))
+            roomMap.put(roomName, new HashSet<Socket>());
+          broadcast(0, roomName, sd.getNick());
+          roomMap.get(roomName).add(s);
+          if (sd.getStatus() == 2) { // If was in another room
+            roomMap.get(sd.getRoom()).remove(s);
+            broadcast(1, sd.getRoom(), sd.getNick());
+          } else
+            sd.setStatus(2);
+          sd.setRoom(roomName);
           setOK(sc);
-          broadcast(1, sd.getRoom(), sd.getNick());
-        } else {
-          setError(sc);
-        }
-        break;
-      case ("/bye"):
-        writeMsg(sc, "BYE");
-        return false;
-      case ("/priv"):
-        if(sd.getStatus()==0 || splitMessage.length < 3) {
-          setError(sc);
-          return true;
-        }
-        String target = splitMessage[1];
-        for(Entry<Socket, SocData> it : socMap.entrySet()) {
-          String nick = it.getValue().getNick();
-          if(nick.equals(target) && !nick.equals(sd.getNick())){
-            String fin = "PRIVATE " + sd.getNick();
-            for(int i = 2; i < splitMessage.length; i++)
-              fin += " " + splitMessage[i];
-            writeMsg(it.getKey().getChannel(), fin);
+          break;
+        case ("/leave"):
+          if (sd.getStatus() == 2) {
+            roomMap.get(sd.getRoom()).remove(s);
+            sd.setStatus(1);
+            sd.setRoom("");
             setOK(sc);
+            broadcast(1, sd.getRoom(), sd.getNick());
+          } else {
+            setError(sc);
+          }
+          break;
+        case ("/bye"):
+          writeMsg(sc, "BYE");
+          return false;
+        case ("/priv"):
+          if(sd.getStatus()==0 || splitMessage.length < 3) {
+            setError(sc);
             return true;
           }
-        }
-        setError(sc);
-        return true;
-      default:
-        if (sd.getStatus() != 2) {
+          String target = splitMessage[1];
+          for(Entry<Socket, SocData> it : socMap.entrySet()) {
+            String nick = it.getValue().getNick();
+            if(nick.equals(target) && !nick.equals(sd.getNick())){
+              String fin = "PRIVATE " + sd.getNick();
+              for(int i = 2; i < splitMessage.length; i++)
+                fin += " " + splitMessage[i];
+              writeMsg(it.getKey().getChannel(), fin);
+              setOK(sc);
+              return true;
+            }
+          }
           setError(sc);
           return true;
-        }
-        broadcast(0, sd.getRoom(), sd.getNick(), message, s);
-        break;
+        default:
+          if (sd.getStatus() != 2) {
+            setError(sc);
+            return true;
+          }
+          broadcast(0, sd.getRoom(), sd.getNick(), message, s);
+          break;
+      }
     }
-
     return true;
   }
 
