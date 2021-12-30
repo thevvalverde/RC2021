@@ -202,7 +202,7 @@ public class ChatServer {
     StringBuffer sb = sd.sb;
 
     buffer.clear();
-    System.out.println( sc.read(buffer));
+    sc.read(buffer);
     buffer.flip();
     System.out.println(buffer.limit());
 
