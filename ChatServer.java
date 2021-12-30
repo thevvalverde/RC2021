@@ -153,7 +153,7 @@ public class ChatServer {
                   if(!(room = socMap.get(s).getRoom()).isEmpty()){
                     roomMap.get(room).remove(s);
                     broadcast(1, room, socMap.get(s).getNick());
-                  } 
+                  }
                   socMap.remove(s);
                   System.out.println("Closing connection to " + s);
                   s.close();
@@ -174,7 +174,7 @@ public class ChatServer {
                 if(!(room = socMap.get(s).getRoom()).isEmpty()){
                   roomMap.get(room).remove(s);
                   broadcast(1, room, socMap.get(s).getNick());
-                } 
+                }
                 socMap.remove(s);
               } catch (IOException ie2) {
                 System.out.println(ie2);
@@ -331,12 +331,12 @@ public class ChatServer {
   static private void broadcast(int id, String room, String first, String second) throws IOException { // 0 - MESSAGE ; 1 - NEWNICK
     String msg = "";
     if (id == 0) {
-      msg += "MESSAGE ";
+      msg += first + ": " + second;
     } else {
       msg += "NEWNICK ";
+      msg += first + " ";
+      msg += second + " ";
     }
-    msg += first + " ";
-    msg += second + " ";
     for (Socket soc : roomMap.get(room)) {
       SocketChannel sc = soc.getChannel();
       writeMsg(sc, msg);
