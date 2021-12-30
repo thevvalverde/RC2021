@@ -269,11 +269,6 @@ public class ChatServer {
         break;
       case ("/bye"):
         writeMsg(sc, "BYE");
-        if (sd.getStatus() == 2) {
-          roomMap.get(sd.getRoom()).remove(s);
-          broadcast(1, sd.getRoom(), sd.getNick());
-        }
-        sd = new SocData();
         return false;
       case ("/priv"):
         if(sd.getStatus()==0 || splitMessage.length < 3) {

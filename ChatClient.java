@@ -85,7 +85,8 @@ public class ChatClient {
         // PREENCHER AQUI com código que envia a mensagem ao servidor
 
         DataOutputStream toServer = new DataOutputStream(clientSocket.getOutputStream());
-        toServer.writeBytes("/" + message + '\n'); // Write to server
+        message = (message.charAt(0)=='/') ? "/" + message : message;
+        toServer.writeBytes(message + '\n'); // Write to server
 
     }
 
