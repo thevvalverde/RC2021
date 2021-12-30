@@ -162,6 +162,7 @@ public class ChatClient {
                             break;
                         case "PRIVATE":
                             ans += "(priv) " + rcvd[1] + ": " + rcvd[2];
+                            System.out.println(ans);
                             break;
                         case "BYE":
                             ans += "BYE";

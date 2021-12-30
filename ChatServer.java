@@ -218,7 +218,6 @@ public class ChatServer {
       String message = sb.substring(0, index);
       sb.delete(0, index + 1);
       if(message.charAt(0)=='/' && message.charAt(1)=='/') message = message.substring(1);
-
       String[] splitMessage = message.split(" ", -1);
       if(message.length()==0 || splitMessage.length==0) return true;
 
@@ -343,7 +342,6 @@ public class ChatServer {
     }
 
     static private void writeMsg(SocketChannel sc, String message) throws IOException {
-      // System.out.println("Sending message : " + message);
       sc.write(encoder.encode(CharBuffer.wrap(message + '\n')));
     }
 
